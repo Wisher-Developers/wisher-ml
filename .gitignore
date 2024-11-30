@@ -1,0 +1,8 @@
+__pycache__/
+.idea
+
+kafka/*
+milvus/db/*
+postgres/
+
+
