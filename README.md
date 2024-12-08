@@ -11,6 +11,7 @@ At first run you should also add topics needed to Kafka server:
 ```
 docker exec kafka kafka-topics.sh --create --topic product-add --bootstrap-server localhost:9092
 docker exec kafka kafka-topics.sh --create --topic product-search --bootstrap-server localhost:9092
+docker exec kafka kafka-topics.sh --create --topic product-response --bootstrap-server localhost:9092
 ```
 
 # Data structures accepted by Kafka

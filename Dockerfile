@@ -13,4 +13,4 @@ RUN pipenv install --system --deploy --clear
 
 COPY ./ ./
 
-CMD [ "./start.sh" ]
+CMD [ "bash", "./start.sh" ]

@@ -90,33 +90,33 @@ class KafkaConsumers:
             return
 
         async with self.pg_session_async() as session:
-            stmt = select(Product).filter(Product.external_uuid.in_(message['products']))
-
-            result = await session.execute(stmt)
-            embeddings_list = []
-            for product in result.scalars():
-                embeddings_list.append(product.embedding)
-
-            # Converting numpy objects to native floats
-            average_embedding = [
-                float(value) for value in numpy.mean(embeddings_list, axis=0)
-            ]
-
-            sql = text(
-                "SELECT external_uuid, 1 - (embedding <=> :avg_embedding) AS cosine_similarity FROM products "
-                "ORDER BY cosine_similarity DESC LIMIT 100"
-            )
-            result = await session.execute(sql, {"avg_embedding": json.dumps(average_embedding)})
             response = {
                 "request_id": message.get('request_id'),
                 "response": True,
                 "products": []
             }
 
-            for product in result.scalars():
-                response['products'].append(str(product))
+            stmt = select(Product).filter(Product.external_uuid.in_(message['products']))
+            result = await session.execute(stmt)
 
-            await self.aio_producer.produce('product-search', json.dumps(response))
+            embeddings_list = [product.embedding for product in result.scalars()]
+            if embeddings_list:
+                # Converting numpy objects to native floats
+                average_embedding = [
+                    float(value) for value in numpy.mean(embeddings_list, axis=0)
+                ]
+
+                sql = text(
+                    "SELECT external_uuid, 1 - (embedding <=> :avg_embedding) AS cosine_similarity FROM products "
+                    "ORDER BY cosine_similarity DESC LIMIT 100"
+                )
+                result = await session.execute(sql, {"avg_embedding": json.dumps(average_embedding)})
+
+                for product in result.scalars():
+                    response['products'].append(str(product))
+
+            await self.aio_producer.produce('product-response', json.dumps(response))
+
 
 async def kafka_main_loop() -> None:
     kafka_config = {
